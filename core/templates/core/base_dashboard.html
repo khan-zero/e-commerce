@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</head>
+    
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="{% url 'dashboard:dashboard_overview' %}">Overview</a></li>
+                    <li><a href="{% url 'dashboard:product_list' %}">Products</a></li>
+                    <li><a href="{% url 'dashboard:order_list' %}">Orders</a></li>
+                    {% if user.is_seller %}
+                    <li><a href="{% url 'dashboard:shop_settings' %}">Shop Settings</a></li>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <li><a href="{% url 'dashboard:user_management' %}">Users</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'dashboard:review_list' %}">Reviews</a></li>
+                    <li><a href="{% url 'dashboard:comment_list' %}">Comments</a></li>
+
+                    {# --- NEW: Login/Logout/Register Links --- #}
+                    {% if user.is_authenticated and request.resolver_match.url_name != 'login' %}
+                        <li>
+                            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-button">Logout ({{ user.phone_number }})</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Login</a></li> {# Use 'login' as defined by django.contrib.auth.urls #}
+                        <li><a href="{% url 'register' %}">Register</a></li> {# Use 'register' as defined in your project urls.py #}
+                    {% endif %}
+                </ul>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="top-nav">
+                <h1>{% block page_title %}{% endblock page_title %}</h1>
+                <div class="user-info">
+                    <span>Hello, {{ user.first_name }}</span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-button">Logout</button>
+                    </form>
+                </div>
+            </header>
+            <div class="content-area">
+                {% block content %}
+                {% endblock content %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    </body>
+</html>

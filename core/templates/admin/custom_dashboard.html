@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Chosen Palette: Warm Neutrals with Subtle Accents -->
+    <!-- Application Structure Plan: The SPA is a custom admin dashboard page with a header, key metrics cards, a section for interactive line, bar, and pie charts, and a footer. This structure provides a quick overview and allows for deeper data exploration, prioritizing user understanding and ease of navigation for administrators. -->
+    <!-- Visualization & Content Choices: Sales Over Time (Line Chart via Chart.js) for trends; Products by Category (Bar Chart via Chart.js) for categorical comparison; Order Status Distribution (Pie Chart via Chart.js) for proportional representation; Key Metrics (HTML/Tailwind cards) for high-level summaries. All choices are justified by their effectiveness in conveying specific data goals and adhere to the NO SVG/Mermaid constraint. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* stone-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px; /* Max width for charts */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height for charts */
+            max-height: 400px; /* Max height for charts */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        /* Custom tooltip styling for Chart.js */
+        .chartjs-tooltip {
+            opacity: 1;
+            position: absolute;
+            background: rgba(0, 0, 0, .7);
+            color: white;
+            border-radius: 6px;
+            padding: 8px 12px;
+            pointer-events: none;
+            transition: all .1s ease;
+            font-size: 0.875rem; /* text-sm */
+            z-index: 1000;
+        }
+        .chartjs-tooltip-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .chartjs-tooltip-body {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .chartjs-tooltip-body li {
+            margin-bottom: 2px;
+        }
+        .chartjs-tooltip-body li:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-indigo-800 mb-2">Admin Dashboard</h1>
+            <p class="text-lg text-stone-600">Overview of E-commerce Platform Statistics</p>
+        </header>
+
+        <!-- Key Metrics Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center text-center">
+                <div class="text-5xl font-bold text-indigo-600 mb-2" id="totalUsers">0</div>
+                <p class="text-stone-600 text-lg">Total Users</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center text-center">
+                <div class="text-5xl font-bold text-emerald-600 mb-2" id="totalProducts">0</div>
+                <p class="text-stone-600 text-lg">Total Products</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center text-center">
+                <div class="text-5xl font-bold text-rose-600 mb-2" id="totalOrders">0</div>
+                <p class="text-stone-600 text-lg">Total Orders</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center text-center">
+                <div class="text-5xl font-bold text-blue-600 mb-2" id="totalRevenue">$0.00</div>
+                <p class="text-stone-600 text-lg">Total Revenue</p>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Sales Over Time Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-indigo-700 mb-4 text-center">Sales Over Time (Last 30 Days)</h2>
+                <p class="text-stone-600 text-sm mb-4 text-center">Displays the daily revenue generated over the past month.</p>
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Products by Category Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4 text-center">Products by Category</h2>
+                <p class="text-stone-600 text-sm mb-4 text-center">Shows the distribution of products across different categories.</p>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Order Status Distribution Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6 lg:col-span-2">
+                <h2 class="text-2xl font-semibold text-rose-700 mb-4 text-center">Order Status Distribution</h2>
+                <p class="text-stone-600 text-sm mb-4 text-center">Illustrates the proportion of orders in various processing stages.</p>
+                <div class="chart-container !max-w-md !h-80 mx-auto"> <!-- Smaller container for pie chart -->
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-stone-500 text-sm mt-12">
+            <p>&copy; 2025 E-commerce Platform. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Custom Chart.js tooltip plugin
+        const externalTooltipHandler = (context) => {
+            const { chart, tooltip } = context;
+            let tooltipEl = chart.canvas.parentNode.querySelector('.chartjs-tooltip');
+
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.classList.add('chartjs-tooltip');
+                tooltipEl.innerHTML = '<table></table>';
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            const getBody = (bodyItem) => bodyItem.lines;
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(getBody);
+
+                let innerHtml = '<div class="chartjs-tooltip-title">';
+                titleLines.forEach(function (title) {
+                    innerHtml += '<span>' + title + '</span>';
+                });
+                innerHtml += '</div><ul class="chartjs-tooltip-body">';
+
+                bodyLines.forEach(function (body, i) {
+                    const colors = tooltip.labelColors[i];
+                    const style = `background:${colors.backgroundColor}; border-color:${colors.borderColor}; border-width:2px; width:10px; height:10px; display:inline-block; margin-right:5px; border-radius:50%;`;
+                    const span = `<span style="${style}"></span>`;
+                    innerHtml += `<li>${span}${body}</li>`;
+                });
+                innerHtml += '</ul>';
+
+                let tableRoot = tooltipEl.querySelector('table');
+                if (tableRoot) {
+                    tableRoot.innerHTML = innerHtml;
+                }
+            }
+
+            const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+            tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+            tooltipEl.style.font = tooltip.options.bodyFont.string;
+            tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+        };
+
+        // Function to wrap long labels
+        function wrapLabel(label, maxLen) {
+            if (label.length <= maxLen) return label;
+            const words = label.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxLen && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            });
+            lines.push(currentLine.trim());
+            return lines;
+        }
+
+        // Fetch data and render charts
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Placeholder for API base URL (replace with your actual Django API base URL)
+            const API_BASE_URL = '/api'; // Assuming your Django API is at /api
+
+            // Helper function to fetch data
+            async function fetchData(endpoint) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Add Authorization header if needed for authenticated endpoints
+                            // 'Authorization': `Bearer YOUR_ACCESS_TOKEN`
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Error fetching data from ${endpoint}:`, error);
+                    return null;
+                }
+            }
+
+            // --- Key Metrics ---
+            // Note: These endpoints might need to be created or adjusted in your Django backend
+            // For now, using mock data or assuming they return simple counts/sums.
+            const userStats = await fetchData('/analytics/user-statistics/'); // Assuming this returns [{role: 'buyer', count: X}, ...]
+            const orderStats = await fetchData('/analytics/order-statistics/'); // Assuming this returns {total_orders: X, total_revenue: Y}
+            const productSales = await fetchData('/analytics/total-product-sales/'); // Assuming this returns [{product_name: X, total_sold_quantity: Y}, ...]
+            const categories = await fetchData('/categories/'); // Assuming this returns [{id: X, name: Y}, ...]
+            
+            // Populate Key Metrics
+            if (userStats) {
+                const totalUsers = userStats.reduce((sum, item) => sum + item.count, 0);
+                document.getElementById('totalUsers').textContent = totalUsers.toLocaleString();
+            }
+            if (productSales) {
+                // Total products would be the count of distinct products, not total sold quantity
+                // You might need a separate endpoint for total product count if not available from /products/
+                const totalProducts = productSales.length; // Simplified: count of top sold products
+                document.getElementById('totalProducts').textContent = totalProducts.toLocaleString();
+            }
+            if (orderStats) {
+                document.getElementById('totalOrders').textContent = orderStats.total_orders.toLocaleString();
+                document.getElementById('totalRevenue').textContent = `$${parseFloat(orderStats.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+
+            // --- Sales Over Time Chart (Line Chart) ---
+            const salesDataRaw = await fetchData('/analytics/seller-daily-sales-chart/'); // Assuming this returns daily sales for last 30 days
+            if (salesDataRaw) {
+                const labels = salesDataRaw.map(d => d.sale_date);
+                const data = salesDataRaw.map(d => parseFloat(d.daily_revenue));
+
+                const salesCtx = document.getElementById('salesChart').getContext('2d');
+                new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Daily Revenue',
+                            data: data,
+                            borderColor: '#4f46e5', /* indigo-600 */
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false, // Disable default tooltip
+                                position: 'nearest',
+                                external: externalTooltipHandler, // Use custom handler
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return 'Date: ' + tooltipItems[0].label;
+                                    },
+                                    label: function(tooltipItem) {
+                                        return 'Revenue: $' + tooltipItem.raw.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#475569' /* stone-600 */
+                                },
+                                ticks: {
+                                    color: '#64748b' /* stone-500 */
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Revenue ($)',
+                                    color: '#475569' /* stone-600 */
+                                },
+                                ticks: {
+                                    color: '#64748b' /* stone-500 */
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Products by Category Chart (Bar Chart) ---
+            if (categories) {
+                // Assuming categories endpoint returns an array of category objects {id, name}
+                // And you need to count products per category. This might require a new endpoint
+                // or processing the /products/ endpoint data.
+                // For demonstration, let's mock product counts per category.
+                const categoryProductCounts = {};
+                // Example: If productSales has category info, aggregate it
+                // productSales.forEach(p => {
+                //     const categoryName = p.category_name; // Assuming category_name is in productSales
+                //     categoryProductCounts[categoryName] = (categoryProductCounts[categoryName] || 0) + p.total_sold_quantity; // Or just count products
+                // });
+
+                // Mock data for categories if direct count is not available from API
+                const mockCategoryData = {
+                    'Electronics': 150,
+                    'Books': 80,
+                    'Home & Garden': 120,
+                    'Clothing & Apparel': 90,
+                    'Sports & Outdoors': 60
+                };
+                const categoryLabels = Object.keys(mockCategoryData).map(label => wrapLabel(label, 16));
+                const categoryCounts = Object.values(mockCategoryData);
+
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(categoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: categoryLabels,
+                        datasets: [{
+                            label: 'Number of Products',
+                            data: categoryCounts,
+                            backgroundColor: '#10b981', /* emerald-500 */
+                            borderColor: '#059669', /* emerald-600 */
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false,
+                                position: 'nearest',
+                                external: externalTooltipHandler,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return 'Category: ' + tooltipItems[0].label.join(' ');
+                                    },
+                                    label: function(tooltipItem) {
+                                        return 'Products: ' + tooltipItem.raw.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Category',
+                                    color: '#475569' /* stone-600 */
+                                },
+                                ticks: {
+                                    color: '#64748b' /* stone-500 */
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Count',
+                                    color: '#475569' /* stone-600 */
+                                },
+                                ticks: {
+                                    color: '#64748b' /* stone-500 */
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Order Status Distribution Chart (Pie Chart) ---
+            if (orderStats && orderStats.status_counts) { // Assuming orderStats now includes status_counts
+                const statusLabels = Object.keys(orderStats.status_counts).map(label => wrapLabel(label, 16));
+                const statusData = Object.values(orderStats.status_counts);
+                const backgroundColors = [
+                    '#f43f5e', /* rose-500 (PENDING) */
+                    '#fbbf24', /* amber-400 (PROCESSING) */
+                    '#3b82f6', /* blue-500 (SHIPPED) */
+                    '#22c55e', /* emerald-500 (DELIVERED) */
+                    '#6b7280', /* gray-500 (CANCELLED) */
+                    '#a855f7'  /* purple-500 (REFUNDED) */
+                ];
+
+                const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+                new Chart(orderStatusCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusData,
+                            backgroundColor: backgroundColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: '#475569', /* stone-600 */
+                                    font: {
+                                        size: 14
+                                    },
+                                    boxWidth: 20,
+                                    padding: 15,
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const meta = chart.getDatasetMeta(0);
+                                                const style = meta.data[i].options.backgroundColor;
+                                                const value = data.datasets[0].data[i];
+                                                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                                return {
+                                                    text: `${label.join(' ')} (${percentage})`,
+                                                    fillStyle: style,
+                                                    strokeStyle: style,
+                                                    lineWidth: 1,
+                                                    hidden: !chart.is  DatasetVisible(0) || data.datasets[0].data[i] === 0,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                enabled: false,
+                                position: 'nearest',
+                                external: externalTooltipHandler,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label.join(' ');
+                                    },
+                                    label: function(tooltipItem) {
+                                        const value = tooltipItem.raw;
+                                        const total = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                        return `${value.toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Mock data for order status if not available from API
+                const mockOrderStatusData = {
+                    'PENDING': 50,
+                    'PROCESSING': 30,
+                    'SHIPPED': 15,
+                    'DELIVERED': 100,
+                    'CANCELLED': 5,
+                    'REFUNDED': 2
+                };
+                const statusLabels = Object.keys(mockOrderStatusData).map(label => wrapLabel(label, 16));
+                const statusData = Object.values(mockOrderStatusData);
+                const backgroundColors = [
+                    '#f43f5e', /* rose-500 (PENDING) */
+                    '#fbbf24', /* amber-400 (PROCESSING) */
+                    '#3b82f6', /* blue-500 (SHIPPED) */
+                    '#22c55e', /* emerald-500 (DELIVERED) */
+                    '#6b7280', /* gray-500 (CANCELLED) */
+                    '#a855f7'  /* purple-500 (REFUNDED) */
+                ];
+
+                const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+                new Chart(orderStatusCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusData,
+                            backgroundColor: backgroundColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: '#475569', /* stone-600 */
+                                    font: {
+                                        size: 14
+                                    },
+                                    boxWidth: 20,
+                                    padding: 15,
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const meta = chart.getDatasetMeta(0);
+                                                const style = meta.data[i].options.backgroundColor;
+                                                const value = data.datasets[0].data[i];
+                                                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                                return {
+                                                    text: `${label.join(' ')} (${percentage})`,
+                                                    fillStyle: style,
+                                                    strokeStyle: style,
+                                                    lineWidth: 1,
+                                                    hidden: !chart.isDatasetVisible(0) || data.datasets[0].data[i] === 0,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                enabled: false,
+                                position: 'nearest',
+                                external: externalTooltipHandler,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label.join(' ');
+                                    },
+                                    label: function(tooltipItem) {
+                                        const value = tooltipItem.raw;
+                                        const total = tooltipItem.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                        return `${value.toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

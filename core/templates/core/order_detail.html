@@ -1,0 +1,59 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} - Dashboard{% endblock %}
+{% block page_title %}Order Details: #{{ order.id }}{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-grid-charts" style="grid-template-columns: 2fr 1fr;">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>Order Information</h2>
+                <a href="{% url 'dashboard:order_update_status' order.id %}" class="btn btn-sm btn-primary">Update Status</a>
+            </div>
+            <div class="card-body">
+                <p><strong>Customer:</strong> {{ order.customer.get_full_name|default:order.customer.phone_number|default:"Guest" }}</p>
+                <p><strong>Order Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+                <p><strong>Status:</strong> <span class="status-{{ order.status|lower }}">{{ order.get_status_display }}</span></p>
+                <p><strong>Total Amount:</strong> ${{ order.total_amount }}</p>
+                <p><strong>Paid:</strong> {{ order.is_paid|yesno:"Yes,No" }}</p>
+
+                <h3>Shipping Address</h3>
+                <p>{{ order.shipping_address_line1 }}</p>
+                {% if order.shipping_address_line2 %}<p>{{ order.shipping_address_line2 }}</p>{% endif %}
+                <p>{{ order.shipping_city }}, {{ order.shipping_state|default:"" }} {{ order.shipping_zip_code }}</p>
+                <p>{{ order.shipping_country }}</p>
+
+                {% if order.billing_address_line1 %}
+                    <h3>Billing Address</h3>
+                    <p>{{ order.billing_address_line1 }}</p>
+                    {% if order.billing_address_line2 %}<p>{{ order.billing_address_line2 }}</p>{% endif %}
+                    <p>{{ order.billing_city }}, {{ order.billing_state|default:"" }} {{ order.billing_zip_code }}</p>
+                    <p>{{ order.billing_country }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>Order Items</h2>
+            </div>
+            <div class="card-body">
+                {% if order.items.all %}
+                <ul>
+                    {% for item in order.items.all %}
+                        <li>
+                            {{ item.quantity }} x                             {% if item.product %}{{ item.product.name }}{% else %}Deleted Product{% endif %}
+
+                            (${% if item.price %}{{ item.price }}{% else %}0.00{% endif %}) - Total: ${{ item.get_cost }}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Total Items Cost:</strong> ${{ order.get_total_cost }}</p>
+                {% else %}
+                <p>No items found for this order.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

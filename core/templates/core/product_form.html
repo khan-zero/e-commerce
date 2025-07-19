@@ -1,0 +1,30 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{% if product %}Edit Product{% else %}Add Product{% endif %} - Dashboard{% endblock %}
+{% block page_title %}{% if product %}Edit Product: {{ product.name }}{% else %}Add New Product{% endif %}{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>{% if product %}Edit Product{% else %}Add New Product{% endif %}</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <h3>Product Images</h3>
+                {{ formset.management_form }}
+                {% for image_form in formset %}
+                    <div class="image-form-row">
+                        {{ image_form.as_p }}
+                        {% if image_form.instance.pk %}<img src="{{ image_form.instance.image.url }}" width="100">{% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">{% if product %}Update Product{% else %}Create Product{% endif %}</button>
+                <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

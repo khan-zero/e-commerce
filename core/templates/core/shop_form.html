@@ -1,0 +1,14 @@
+{% extends 'core/base_dashboard.html' %}
+
+{% block title %}Create/Edit Shop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{% if shop %}Edit Shop{% else %}Create New Shop{% endif %}</h2>
+    <form method="post" enctype="multipart/form-files">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Save Shop</button>
+    </form>
+</div>
+{% endblock %}

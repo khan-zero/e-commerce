@@ -1,0 +1,75 @@
+{% extends 'core/base_dashboard.html' %} {# You might have a base.html for public pages, or base_dashboard.html #}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <h2>Login</h2>
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+        {{ form.as_p }} {# Renders form fields as paragraphs #}
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
+    <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+</div>
+
+<style>
+    /* Basic styling for auth forms */
+    .auth-container {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 30px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background-color: #fff;
+        text-align: center;
+    }
+    .auth-container h2 {
+        margin-bottom: 25px;
+        color: #333;
+    }
+    .auth-form p {
+        margin-bottom: 15px;
+        text-align: left;
+    }
+    .auth-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+    .auth-form input[type="text"],
+    .auth-form input[type="password"],
+    .auth-form input[type="email"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box; /* Include padding in width */
+    }
+    .auth-form button {
+        width: 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 15px;
+    }
+    .auth-form button:hover {
+        background-color: #0056b3;
+    }
+    .auth-container a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .auth-container a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock content %}

@@ -8,16 +8,13 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 # Import your core app ViewSets
-from core.views import (
+from api.views import (
     CategoryViewSet, ProductViewSet, ProductImageViewSet,
     UserRegistrationView, CustomUserViewSet, ShopViewSet,
     OrderViewSet, CartViewSet,
-    ReviewViewSet, LikeViewSet, CommentViewSet, AnalyticsViewSet # NEW: Import new ViewSets
+    ReviewViewSet, LikeViewSet, CommentViewSet, AnalyticsViewSet
 )
 # Import your new marketing app ViewSets (already here)
-from .views import BannerViewSet, AdPlacementViewSet, AdvertisementViewSet
-
-
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
 router.register(r'products', ProductViewSet)
@@ -26,11 +23,6 @@ router.register(r'users', CustomUserViewSet)
 router.register(r'shops', ShopViewSet)
 router.register(r'orders', OrderViewSet)
 router.register(r'carts', CartViewSet) # Keep this for general cart list/retrieve (admin)
-
-# >>>>> NEW: Register Marketing App ViewSets (already here) <<<<<
-router.register(r'marketing/banners', BannerViewSet)
-router.register(r'marketing/placements', AdPlacementViewSet)
-router.register(r'marketing/advertisements', AdvertisementViewSet)
 
 # >>>>> NEW: Register Review, Like, Comment ViewSets <<<<<
 router.register(r'reviews', ReviewViewSet)

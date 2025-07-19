@@ -1,0 +1,39 @@
+{% extends 'core/base_dashboard.html' %} {# Extend your main base template #}
+{% load static %}
+
+{% block title %}Logged Out{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>You have been logged out</h2>
+    <p>Thank you for visiting! You can <a href="{% url 'login' %}">log in again</a> or go back to the <a href="/">homepage</a>.</p>
+</div>
+
+<style>
+    /* Re-use auth-container styling from login.html */
+    .auth-container {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 30px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background-color: #fff;
+        text-align: center;
+    }
+    .auth-container h2 {
+        margin-bottom: 25px;
+        color: #333;
+    }
+    .auth-container p {
+        margin-bottom: 15px;
+    }
+    .auth-container a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .auth-container a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock content %}

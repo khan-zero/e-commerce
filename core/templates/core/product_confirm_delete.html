@@ -1,0 +1,21 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete Product - Dashboard{% endblock %}
+{% block page_title %}Delete Product: {{ product.name }}{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Confirm Delete</h2>
+        </div>
+        <div class="card-body">
+            <p>Are you sure you want to delete the product "<strong>{{ product.name }}</strong>"? This action cannot be undone.</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,52 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Overview - Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-grid">
+        <div class="dashboard-card overview-card">
+            <h3>Total Orders</h3>
+            <p>{{ total_orders }}</p>
+        </div>
+        <div class="dashboard-card overview-card">
+            <h3>Total Products</h3>
+            <p>{{ total_products }}</p>
+        </div>
+        <div class="dashboard-card overview-card">
+            <h3>Total Customers</h3>
+            <p>{{ total_customers }}</p>
+        </div>
+        <div class="dashboard-card overview-card">
+            <h3>Total Revenue</h3>
+            <p>${{ total_revenue }}</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid-charts">
+        <div class="dashboard-card chart-card">
+            <div class="card-header"><h2>Monthly Sales</h2></div>
+            <canvas id="monthlySalesChart"></canvas>
+        </div>
+
+        <div class="dashboard-card chart-card">
+            <div class="card-header"><h2>Sales by Category</h2></div>
+            <canvas id="categorySalesPieChart"></canvas>
+        </div>
+
+        <div class="dashboard-card chart-card full-width-chart">
+            <div class="card-header"><h2>Daily Sales (Last 30 Days)</h2></div>
+            <canvas id="dailySalesLineChart"></canvas>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    // Pass Django context data to JavaScript
+    const monthlySalesData = JSON.parse('{{ monthly_sales_json|escapejs }}');
+    const categorySalesData = JSON.parse('{{ category_sales_json|escapejs }}');
+    const dailySalesData = JSON.parse('{{ dailySales_json|escapejs }}');
+</script>
+{% endblock %}

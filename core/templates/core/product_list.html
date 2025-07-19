@@ -1,0 +1,49 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Products - Dashboard{% endblock %}
+{% block page_title %}Product Management{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Your Products</h2>
+            <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary">Add New Product</a>
+        </div>
+        <div class="card-body">
+            {% if products %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Available</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td><img src="{{ product.get_main_image }}" alt="{{ product.name }}" class="product-thumbnail"></td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.category.name|default:"N/A" }}</td>
+                        <td>${{ product.price }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>{{ product.available|yesno:"Yes,No" }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:product_edit' product.slug %}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{% url 'dashboard:product_delete' product.slug %}" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No products found for your shop.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

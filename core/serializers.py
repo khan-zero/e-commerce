@@ -34,7 +34,7 @@ class ShopSerializer(serializers.ModelSerializer):
         model = Shop
         fields = [
             'id', 'name', 'slug', 'description', 'logo',
-            'phone_number', 'email', 'is_active', 'owner', 'owner_username',
+            'phone_number', 'email', 'is_active', 'owner', 'owner_username', # 'email' is still present in Shop model
             'owner_phone_number', 'owner_profile_picture', # Added new fields
             'created_at', 'updated_at'
         ]
@@ -138,14 +138,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User # Use the get_user_model()
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'phone_number', 'address', 'profile_picture', 'is_seller', 'role', # Added 'role' field
+            'id', 'username', 'first_name', 'last_name',
+            'phone_number', 'address', 'profile_picture', 'is_seller', 'role', # Removed 'email'
             'shop_profile' # Include nested shop profile
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
             'username': {'required': False, 'allow_blank': True} # Allow username to be optional/blank if phone_number is primary
-        } 
+        }    
         read_only_fields = ['is_seller', 'shop_profile', 'role'] # These are set by admin/system, or derived from other logic
 
     def create(self, validated_data):
@@ -160,11 +160,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
-        
+            
         # Prevent direct modification of 'role' through this serializer for non-admin users
         if not self.context['request'].user.is_staff and 'role' in validated_data:
             raise serializers.ValidationError({"role": "You do not have permission to change user roles."})
-        
+            
         return super().update(instance, validated_data)
 
 # --- Registration Serializer (For creating new users) ---
@@ -175,9 +175,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         # Use phone_number as the primary identifier for registration
-        fields = ['phone_number', 'email', 'password', 'password2', 'first_name', 'last_name', 'address']
+        fields = ['phone_number', 'password', 'password2', 'first_name', 'last_name', 'address'] # Removed 'email'
         extra_kwargs = {
-            'email': {'required': True}, # Make email required for registration
+            # Removed 'email': {'required': True},
             'first_name': {'required': True}, # Make first_name required
             'last_name': {'required': True}, # Make last_name required
             'address': {'required': False},
@@ -186,14 +186,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['password'] != data['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-        
+            
         # Check if phone number already exists
         if User.objects.filter(phone_number=data['phone_number']).exists():
             raise serializers.ValidationError({"phone_number": "This phone number is already registered."})
-        
-        # Check if email already exists (if email is unique)
-        if User.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError({"email": "This email is already registered."})
+            
+        # Removed: Check if email already exists (if email is unique)
+        # if User.objects.filter(email=data['email']).exists():
+        #     raise serializers.ValidationError({"email": "This email is already registered."})
 
         return data
 
@@ -203,7 +203,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             phone_number=validated_data['phone_number'],
             password=validated_data['password'],
-            email=validated_data['email'],
+            # Removed 'email' from here
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             address=validated_data.get('address', ''),

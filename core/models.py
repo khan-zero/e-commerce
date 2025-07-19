@@ -46,7 +46,6 @@ class Shop(models.Model):
     description = models.TextField(blank=True, null=True, help_text="A description of the shop")
     logo = models.ImageField(upload_to='shops/logos/', blank=True, null=True, help_text="Shop logo")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
     is_active = models.BooleanField(default=False, help_text="Whether the shop is active and visible")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -180,7 +179,7 @@ class CustomUser(AbstractUser):
     # Django's AbstractUser already has 'first_name', 'last_name', 'email', 'is_active', 'date_joined', 'last_login', 'is_staff', 'is_superuser'
     # We need to explicitly set USERNAME_FIELD and REQUIRED_FIELDS for our custom login.
     USERNAME_FIELD = 'phone_number' # This tells Django to use phone_number for login
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'email'] # Fields required when creating a user via createsuperuser command
+    REQUIRED_FIELDS = ['first_name', 'last_name'] # Fields required when creating a user via createsuperuser command
 
     objects = CustomUserManager() # Assign our custom manager
 

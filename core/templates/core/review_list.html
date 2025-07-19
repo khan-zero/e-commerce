@@ -1,0 +1,45 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Reviews - Dashboard{% endblock %}
+{% block page_title %}Customer Reviews{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Product Reviews</h2>
+        </div>
+        <div class="card-body">
+            {% if reviews %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>User</th>
+                        <th>Rating</th>
+                        <th>Comment</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for review in reviews %}
+                    <tr>
+                        <td><a href="{% url 'dashboard:product_edit' review.product.slug %}">{{ review.product.name }}</a></td>
+                        <td>{{ review.user.get_full_name|default:review.user.phone_number }}</td>
+                        <td>{{ review.rating }} stars</td>
+                        <td>{{ review.comment_text|truncatechars:100 }}</td>
+                        <td>{{ review.review_date|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No reviews found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

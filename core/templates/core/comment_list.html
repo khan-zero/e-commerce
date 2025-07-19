@@ -1,0 +1,43 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Comments - Dashboard{% endblock %}
+{% block page_title %}Customer Comments{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Product Comments</h2>
+        </div>
+        <div class="card-body">
+            {% if comments %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>User</th>
+                        <th>Comment</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in comments %}
+                    <tr>
+                        <td><a href="{% url 'dashboard:product_edit' comment.product.slug %}">{{ comment.product.name }}</a></td>
+                        <td>{{ comment.user.get_full_name|default:comment.user.phone_number }}</td>
+                        <td>{{ comment.comment_text|truncatechars:150 }}</td>
+                        <td>{{ comment.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No comments found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,21 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Update Order Status - Dashboard{% endblock %}
+{% block page_title %}Update Status for Order #{{ order.id }}{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Update Order Status</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Update Status</button>
+                <a href="{% url 'dashboard:order_detail' order.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

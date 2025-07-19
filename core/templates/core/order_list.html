@@ -1,0 +1,54 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Orders - Dashboard{% endblock %}
+{% block page_title %}Order Management{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>All Orders</h2>
+        </div>
+        <div class="card-body">
+            {% if orders %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.customer.get_full_name|default:order.customer.phone_number|default:"Guest" }}</td>
+                        <td>${{ order.total_amount }}</td>
+                        <td><span class="status-{{ order.status|lower }}">{{ order.get_status_display }}</span></td>
+                        <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:order_detail' order.id %}" class="btn btn-sm btn-secondary">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No orders found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        /* Add status specific styling */
+        .status-pending { color: orange; font-weight: bold; }
+        .status-processing { color: blue; font-weight: bold; }
+        .status-shipped { color: purple; font-weight: bold; }
+        .status-delivered { color: green; font-weight: bold; }
+        .status-cancelled, .status-refunded { color: red; font-weight: bold; }
+    </style>
+{% endblock content %}

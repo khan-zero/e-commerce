@@ -1,0 +1,21 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Edit User - Dashboard{% endblock %}
+{% block page_title %}Edit User: {{ user_to_edit.phone_number }}{% endblock page_title %}
+
+{% block content %}
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2>Edit User Details</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Update User</button>
+                <a href="{% url 'dashboard:user_management' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

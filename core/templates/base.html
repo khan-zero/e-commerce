@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</head>
+    
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="{% url 'dashboard_overview' %}">Overview</a></li>
+                    <li><a href="{% url 'product_list' %}">Products</a></li>
+                    <li><a href="{% url 'order_list' %}">Orders</a></li>
+                    {% if user.is_seller %}
+                    <li><a href="{% url 'shop_settings' %}">Shop Settings</a></li>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <li><a href="{% url 'user_management' %}">Users</a></li>
+                    {% endif %}
+                    </ul>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="top-nav">
+                <h1>{% block page_title %}{% endblock page_title %}</h1>
+                <div class="user-info">
+                    <span>Hello, {{ user.first_name }}</span>
+                    <a href="{% url 'logout' %}">Logout</a>
+                </div>
+            </header>
+            <div class="content-area">
+                {% block content %}
+                {% endblock content %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    </body>
+</html>

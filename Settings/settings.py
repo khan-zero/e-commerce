@@ -23,9 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-lc_lpjk=5bz5h=^^!k&6#wd!h)&ih@$fz2p3&v@6kaib5$d!y!'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -54,6 +51,7 @@ INSTALLED_APPS = [
     'core',
     'api',
     'marketing',
+    'dashboard',
 ]
 
 REST_FRAMEWORK = {
@@ -81,7 +79,7 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": False,
 
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": settings.SECRET_KEY, # Use your project's SECRET_KEY
+    "SIGNING_KEY": SECRET_KEY, # Use your project's SECRET_KEY
     "VERIFYING_KEY": "",
     "AUDIENCE": None,
     "ISSUER": None,
@@ -138,16 +136,16 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'KhanZero$e_commerce_db',  # Your full database name on PythonAnywhere
-        'USER': 'KhanZero',               # Your PythonAnywhere username
-        'PASSWORD': '40a620la', 
-        'HOST': 'KhanZero.mysql.pythonanywhere-services.com',
-        'PORT': '',                           # Leave empty for default port
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'KhanZero$e_commerce_db',  # Your full database name on PythonAnywhere
+#         'USER': 'KhanZero',               # Your PythonAnywhere username
+#         'PASSWORD': '40a620la', 
+#         'HOST': 'KhanZero.mysql.pythonanywhere-services.com',
+#         'PORT': '',                           # Leave empty for default port
+#     }
+# }
 
 WSGI_APPLICATION = 'Settings.wsgi.application'
 
@@ -194,10 +192,24 @@ USE_I18N = True
 USE_TZ = True
 
 
+LOGIN_REDIRECT_URL = '/dashboard/' # Where to redirect after successful login
+                                   # You can also use name: reverse_lazy('core:dashboard_overview')
+LOGIN_URL = '/accounts/login/'     # The URL for the login page
+                                   # You can also use name: reverse_lazy('login')
+LOGOUT_REDIRECT_URL = '/'          # Where to redirect after logout (e.g., homepage)
+
+# If you use CustomUser model, ensure this is set:
+AUTH_USER_MODEL = 'core.CustomUser'
+
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -205,4 +217,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard:dashboard_overview'
+LOGOUT_REDIRECT_URL = 'login'

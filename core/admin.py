@@ -46,9 +46,11 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         (('Custom Fields', {'fields': ('phone_number', 'address', 'profile_picture', 'is_seller', 'role')}),)
     )
-    list_display = ('phone_number', 'email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'is_seller') # Added phone_number and role
+    # Removed 'email' from list_display
+    list_display = ('phone_number', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'is_seller')
     list_filter = ('is_staff', 'is_active', 'is_seller', 'role') # Added role to filters
-    search_fields = ('phone_number', 'email', 'first_name', 'last_name') # Search by phone_number
+    # Removed 'email' from search_fields
+    search_fields = ('phone_number', 'first_name', 'last_name')
 
 # Admin for Shop
 @admin.register(Shop)
