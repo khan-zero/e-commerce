@@ -12,28 +12,29 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-from django.conf import settings
-import os
+import os # Import os for environment variables
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-insecure-default-for-dev-only')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+# SECURITY WARNING: keep the secret key used in production secret!
+# Use an environment variable for SECRET_KEY in production
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-insecure-default-for-dev-only')
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Use an environment variable for DEBUG
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True' # 'True' is default for local dev
 
-
-if not DEBUG:
-    ALLOWED_HOSTS = [
-    "khanzero.pythonanywhere.com/",
-    "www.khanzero.pythonanywhere.com/"
-    ]
+if DEBUG:
+    ALLOWED_HOSTS = ["*"] # Allow all hosts for local development
 else:
-    ALLOWED_HOSTS = ["*"]
+    # Get allowed hosts from environment variable for production
+    # On PythonAnywhere, set DJANGO_ALLOWED_HOSTS to "khanzero.pythonanywhere.com,www.khanzero.pythonanywhere.com"
+    ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
+
 
 # Application definition
 
@@ -44,7 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -104,14 +105,15 @@ SIMPLE_JWT = {
 }
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True # Be careful with this in production. Consider CORS_ALLOWED_ORIGINS.
 
 AUTH_USER_MODEL = 'core.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # ADD THIS LINE for WhiteNoise
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # Re-added CorsMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -119,7 +121,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Settings.urls'
+ROOT_URLCONF = 'Settings.urls' # Make sure this points to your project's main urls.py
 
 TEMPLATES = [
     {
@@ -136,20 +138,6 @@ TEMPLATES = [
     },
 ]
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'KhanZero$e_commerce_db',  # Your full database name on PythonAnywhere
-#         'USER': 'KhanZero',               # Your PythonAnywhere username
-#         'PASSWORD': '40a620la', 
-#         'HOST': 'KhanZero.mysql.pythonanywhere-services.com',
-#         'PORT': '',                           # Leave empty for default port
-#     }
-# }
-
-WSGI_APPLICATION = 'Settings.wsgi.application'
-
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -159,6 +147,22 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Uncomment and configure the following for MySQL on PythonAnywhere (recommended for production)
+# Remember to install 'mysqlclient' in your virtual environment: pip install mysqlclient
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'KhanZero$e_commerce_db', # Your full database name on PythonAnywhere
+#         'USER': 'KhanZero',               # Your PythonAnywhere username
+#         'PASSWORD': 'YOUR_DATABASE_PASSWORD', # IMPORTANT: Use your actual database password
+#         'HOST': 'KhanZero.mysql.pythonanywhere-services.com',
+#         'PORT': '',                       # Leave empty for default port
+#     }
+# }
+
+
+WSGI_APPLICATION = 'Settings.wsgi.application' # Make sure this points to your project's wsgi.py
 
 
 # Password validation
@@ -192,15 +196,11 @@ USE_I18N = True
 USE_TZ = True
 
 
-LOGIN_REDIRECT_URL = '/dashboard/' # Where to redirect after successful login
-                                   # You can also use name: reverse_lazy('core:dashboard_overview')
-LOGIN_URL = '/accounts/login/'     # The URL for the login page
-                                   # You can also use name: reverse_lazy('login')
-LOGOUT_REDIRECT_URL = '/'          # Where to redirect after logout (e.g., homepage)
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
 
-# If you use CustomUser model, ensure this is set:
-AUTH_USER_MODEL = 'core.CustomUser'
-
+AUTH_USER_MODEL = 'core.CustomUser' # Ensure this is correct for your custom user model
 
 
 # Static files (CSS, JavaScript, Images)
@@ -208,15 +208,32 @@ AUTH_USER_MODEL = 'core.CustomUser'
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # This is where 'collectstatic' will put files
 
 
+# Media files (user uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+
+# WhiteNoise configuration for production static files
+# This is crucial for WhiteNoise to handle static files correctly in production
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+    # You might want to define a 'default' storage backend if you're using S3 or similar for media
+    # "default": {
+    #     "BACKEND": "django.core.files.storage.FileSystemStorage",
+    # },
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' # Good practice for new Django 3.2+ projects
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard:dashboard_overview'
+
+# Custom authentication/redirect URLs (ensure these match your project's URLs)
+LOGIN_URL = 'login' # If you have a named URL 'login'
+LOGIN_REDIRECT_URL = 'dashboard:dashboard_overview' # Example with namespaced URL
 LOGOUT_REDIRECT_URL = 'login'
