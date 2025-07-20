@@ -12,6 +12,7 @@ urlpatterns = [
     path('dashboard/', include("dashboard.urls")),
     path('', include(('core.urls', 'core'))), # Register the 'core' namespace
     path('api/', include("api.urls")),
+    path('marketing/', include('marketing.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

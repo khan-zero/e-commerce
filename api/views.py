@@ -23,8 +23,7 @@ from core.models import (
 from core.serializers import (
     CategorySerializer, ProductSerializer, ProductImageSerializer, CustomUserSerializer,
     ShopSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer,
-    UserRegistrationSerializer,
-    ReviewSerializer, LikeSerializer, CommentSerializer
+    ReviewSerializer, LikeSerializer, CommentSerializer, UserRegistrationSerializer
 )
 
 # Helper function
@@ -88,6 +87,20 @@ class IsSellerOrAdmin(permissions.BasePermission):
             return True
         # A seller can only modify/delete their own products
         return request.user.is_authenticated and request.user.is_seller and obj.shop.owner == request.user
+
+class IsAdminOrSeller(permissions.BasePermission):
+    """
+    Custom permission to allow only admins or sellers.
+    """
+    def has_permission(self, request, view):
+        return request.user and (request.user.is_staff or request.user.is_seller)
+
+class IsBuyer(permissions.BasePermission):
+    """
+    Custom permission to allow only buyers.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'buyer'
 
 
 # --- ViewSets ---
@@ -174,6 +187,19 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ['category', 'shop', 'available'] # Filter by category, shop, availability
     search_fields = ['name', 'description', 'shop__name', 'category__name']
     ordering_fields = ['name', 'price', 'created_at', 'stock']
+
+    @action(detail=False, methods=['get'], url_path='random')
+    def random_products(self, request):
+        """
+        Returns a random set of products.
+        """
+        queryset = self.filter_queryset(self.get_queryset().order_by('?'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get_queryset(self):
         # Admins see all. Sellers see their own products. Public sees active products from active shops.
@@ -276,8 +302,12 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Allow authenticated users to retrieve/update their own profile
         if self.action in ['retrieve', 'update', 'partial_update', 'me']:
+            # Authenticated users can manage their own profile
             return [permissions.IsAuthenticated()]
-        return [permissions.IsAdminUser()] # Only admin for list, create, destroy
+        # Admin-only actions
+        if self.action in ['list', 'create', 'destroy', 'ban_user', 'unban_user', 'change_role']:
+            return [permissions.IsAdminUser()]
+        return [permissions.IsAdminUser()] # Fallback for any other action
 
     def get_queryset(self):
         if self.request.user.is_staff:
@@ -299,6 +329,49 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def ban_user(self, request, pk=None):
+        """
+        Admin only: Bans a user by setting is_active to False.
+        """
+        user = self.get_object()
+        if user.is_superuser and not request.user.is_superuser:
+            return Response({'detail': 'Only a superuser can ban another superuser.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        user.is_active = False
+        user.save()
+        return Response({'detail': f'User {user.phone_number} has been banned.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def unban_user(self, request, pk=None):
+        """
+        Admin only: Unbans a user by setting is_active to True.
+        """
+        user = self.get_object()
+        user.is_active = True
+        user.save()
+        return Response({'detail': f'User {user.phone_number} has been unbanned.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def change_role(self, request, pk=None):
+        """
+        Admin only: Changes a user's role.
+        Requires 'role' in request data (e.g., {'role': 'seller'}).
+        """
+        user = self.get_object()
+        new_role = request.data.get('role')
+
+        if not new_role or new_role not in [choice[0] for choice in CustomUser.ROLE_CHOICES]:
+            return Response({'detail': 'Invalid or missing role.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.is_superuser and not request.user.is_superuser and new_role != 'admin':
+            return Response({'detail': 'Only a superuser can change the role of another superuser.'}, status=status.HTTP_403_FORBIDDEN)
+
+        user.role = new_role
+        user.save() # The save method will handle is_staff, is_superuser, is_seller synchronization
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().prefetch_related('items__product').select_related('customer')
@@ -856,7 +929,7 @@ class AnalyticsViewSet(viewsets.ViewSet): # Using ViewSet as it's not tied to a 
     def get_permissions(self):
         # Seller-specific analytics
         if self.action in ['seller_product_sales', 'seller_order_statistics', 'seller_daily_sales_chart']:
-            return [permissions.IsAuthenticated(), permissions.IsAdminUser | permissions.IsAuthenticated & permissions.BasePermission.has_permission(self, self.request, self)] # Allows Admin or Authenticated Seller
+            return [IsAdminOrSeller()] # Allows Admin or Authenticated Seller
         return [permissions.IsAdminUser()] # All other analytics are admin-only
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAdminUser])

@@ -35,52 +35,92 @@ def can_manage_products(user):
 # --- Dashboard Overview ---
 @login_required
 def dashboard_overview(request):
-    total_orders = Order.objects.count()
-    total_products = Product.objects.count()
-    total_customers = CustomUser.objects.filter(is_seller=False, is_superuser=False).count()
-    total_revenue = Order.objects.filter(is_paid=True).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+    if request.user.is_superuser:
+        total_orders = Order.objects.count()
+        total_products = Product.objects.count()
+        total_customers = CustomUser.objects.filter(is_seller=False, is_superuser=False).count()
+        total_revenue = Order.objects.filter(is_paid=True).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
 
-    monthly_sales_data = {}
-    today = date.today()
-    for i in range(6):
-        month_start = (today.replace(day=1) - timedelta(days=30*i))
-        sales = Order.objects.filter(
-            created_at__year=month_start.year,
-            created_at__month=month_start.month,
-            is_paid=True
-        ).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
-        monthly_sales_data[month_start.strftime('%Y-%m')] = float(sales)
+        monthly_sales_data = {}
+        today = date.today()
+        for i in range(6):
+            month_start = (today.replace(day=1) - timedelta(days=30*i))
+            sales = Order.objects.filter(
+                created_at__year=month_start.year,
+                created_at__month=month_start.month,
+                is_paid=True
+            ).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+            monthly_sales_data[month_start.strftime('%Y-%m')] = float(sales)
 
-    category_sales_data = {}
-    top_categories = OrderItem.objects.filter(
-        order__is_paid=True, product__category__isnull=False
-    ).values('product__category__name').annotate(
-        total_sales=Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=DecimalField()))
-    ).order_by('-total_sales')[:5]
+        category_sales_data = {}
+        top_categories = OrderItem.objects.filter(
+            order__is_paid=True, product__category__isnull=False
+        ).values('product__category__name').annotate(
+            total_sales=Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=DecimalField()))
+        ).order_by('-total_sales')[:5]
 
-    for item in top_categories:
-        safe_total_sales = item['total_sales'] if item['total_sales'] is not None else Decimal('0.00')
-        category_sales_data[item['product__category__name']] = float(safe_total_sales)
+        for item in top_categories:
+            safe_total_sales = item['total_sales'] if item['total_sales'] is not None else Decimal('0.00')
+            category_sales_data[item['product__category__name']] = float(safe_total_sales)
 
-    daily_sales_data = {}
-    for i in range(30):
-        day = today - timedelta(days=i)
-        sales = Order.objects.filter(
-            created_at__date=day,
-            is_paid=True
-        ).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
-        daily_sales_data[day.strftime('%Y-%m-%d')] = float(sales)
+        daily_sales_data = {}
+        for i in range(30):
+            day = today - timedelta(days=i)
+            sales = Order.objects.filter(
+                created_at__date=day,
+                is_paid=True
+            ).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+            daily_sales_data[day.strftime('%Y-%m-%d')] = float(sales)
 
-    context = {
-        'total_orders': total_orders,
-        'total_products': total_products,
-        'total_customers': total_customers,
-        'total_revenue': total_revenue,
-        'monthly_sales_json': monthly_sales_data,
-        'category_sales_json': category_sales_data,
-        'daily_sales_json': daily_sales_data,
-    }
-    return render(request, 'core/dashboard_overview.html', context)
+        context = {
+            'total_orders': total_orders,
+            'total_products': total_products,
+            'total_customers': total_customers,
+            'total_revenue': total_revenue,
+            'monthly_sales_json': monthly_sales_data,
+            'category_sales_json': category_sales_data,
+            'daily_sales_json': daily_sales_data,
+            'is_admin': True
+        }
+        return render(request, 'core/dashboard_overview.html', context)
+
+    elif request.user.is_seller:
+        try:
+            seller_shop = request.user.shop_profile
+        except Shop.DoesNotExist:
+            return redirect('dashboard:shop_create') # Redirect to create shop if seller has none
+
+        # Seller-specific analytics
+        seller_products = Product.objects.filter(shop=seller_shop)
+        total_seller_products = seller_products.count()
+        total_seller_orders = Order.objects.filter(items__product__shop=seller_shop).distinct().count()
+        total_seller_revenue = OrderItem.objects.filter(product__shop=seller_shop).aggregate(
+            total_revenue=Sum(F('quantity') * F('price'))
+        )['total_revenue'] or Decimal('0.00')
+
+        # Daily sales for seller's products
+        seller_daily_sales_data = {}
+        today = date.today()
+        for i in range(30):
+            day = today - timedelta(days=i)
+            sales = OrderItem.objects.filter(
+                product__shop=seller_shop,
+                order__created_at__date=day
+            ).aggregate(Sum(F('quantity') * F('price')))['quantity__times__price__sum'] or Decimal('0.00')
+            seller_daily_sales_data[day.strftime('%Y-%m-%d')] = float(sales)
+
+        context = {
+            'total_seller_products': total_seller_products,
+            'total_seller_orders': total_seller_orders,
+            'total_seller_revenue': total_seller_revenue,
+            'seller_daily_sales_json': seller_daily_sales_data,
+            'is_seller': True
+        }
+        return render(request, 'core/dashboard_overview.html', context)
+
+    else: # Buyer or other roles
+        # Redirect buyers to their profile or a general landing page
+        return redirect('core:user_profile') # Assuming you have a user profile view in core app
 
 # --- Product Management Views ---
 @login_required

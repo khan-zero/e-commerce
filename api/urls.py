@@ -40,6 +40,7 @@ urlpatterns = [
     path('carts/checkout/', CartViewSet.as_view({'post': 'checkout'}), name='cart-checkout'),
 
     # --- Router tomonidan yaratilgan URL'larni kiritish (maxsus URL'lardan KEYIN) ---
+    path('products/random/', ProductViewSet.as_view({'get': 'random_products'}), name='product-random'),
     path('', include(router.urls)),
 
     # --- Boshqa umumiy API URL'lar ---

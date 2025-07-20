@@ -165,14 +165,15 @@ class CustomUser(AbstractUser):
     
     # Role field from JS backend
     # We will map 'admin' role to is_staff/is_superuser
+    class RoleChoices(models.TextChoices):
+        BUYER = 'buyer', 'Buyer'
+        SELLER = 'seller', 'Seller'
+        ADMIN = 'admin', 'Admin'
+
     role = models.CharField(
         max_length=10,
-        choices=[
-            ('buyer', 'Buyer'),
-            ('seller', 'Seller'),
-            ('admin', 'Admin'),
-        ],
-        default='buyer',
+        choices=RoleChoices.choices,
+        default=RoleChoices.BUYER,
         help_text="User's role in the system."
     )
 
@@ -214,9 +215,15 @@ class CustomUser(AbstractUser):
         if self.role == 'admin':
             self.is_staff = True
             self.is_superuser = True
-        else:
+            self.is_seller = False # Admin is not a seller
+        elif self.role == 'seller':
             self.is_staff = False
             self.is_superuser = False
+            self.is_seller = True
+        else: # Default to buyer
+            self.is_staff = False
+            self.is_superuser = False
+            self.is_seller = False
         
         # If username is not set, set it to phone_number (or generate unique if needed)
         if not self.username:
