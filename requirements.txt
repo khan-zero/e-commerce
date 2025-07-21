@@ -60,7 +60,6 @@ PyOpenGL==3.1.9
 pyparsing==2.4.7
 pyperclip==1.9.0
 pyRFC3339==1.1
-python-debian==0.1.43+ubuntu1.1
 python-gnupg==0.4.8
 python-magic==0.4.24
 python-telegram-bot==22.1
